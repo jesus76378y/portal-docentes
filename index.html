@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Portal Docentes — Recursos Compartidos</title>
+
+<!-- Firebase Compat (funciona sin servidor) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCqZapQ_-6jEC1w99H7NIC6nnCTcFFOc2k",
+    authDomain:        "directora-46d08.firebaseapp.com",
+    projectId:         "directora-46d08",
+    storageBucket:     "directora-46d08.firebasestorage.app",
+    messagingSenderId: "1069246112932",
+    appId:             "1:1069246112932:web:592961c059b03fb6aa7231"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db      = firebase.firestore();
+  const storage = firebase.storage();
+  const COL     = "archivos_docentes";
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f4f2;color:#1a1a1a;min-height:100vh}
+.wrap{max-width:740px;margin:0 auto;padding:2rem 1.25rem 4rem}
+.header{display:flex;align-items:center;gap:14px;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:1px solid #dce8e3}
+.logo{width:46px;height:46px;border-radius:12px;background:#0F6E56;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.header h1{font-size:18px;font-weight:700;color:#0a0a0a}
+.header p{font-size:12px;color:#6b7270;margin-top:2px}
+.teacher-bar{background:#fff;border:1px solid #dce8e3;border-radius:12px;padding:.85rem 1rem;display:flex;align-items:center;gap:10px;margin-bottom:1.25rem}
+.teacher-bar svg{width:16px;height:16px;flex-shrink:0;stroke:#9aaba6;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.teacher-bar input{flex:1;border:none;background:transparent;font-size:14px;color:#1a1a1a;outline:none;font-family:inherit}
+.teacher-bar input::placeholder{color:#b0bbb8}
+.upload-zone{background:#fff;border:2px dashed #b8d4cb;border-radius:14px;padding:2.5rem 1.5rem;text-align:center;cursor:pointer;transition:background .15s,border-color .15s;margin-bottom:1.5rem}
+.upload-zone:hover,.upload-zone.dragover{background:#f0faf6;border-color:#1D9E75}
+.upload-zone label{cursor:pointer;display:block}
+.upload-zone input[type=file]{display:none}
+.up-icon{width:50px;height:50px;background:#e1f5ee;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.up-icon svg{width:24px;height:24px;stroke:#0F6E56;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.upload-zone h3{font-size:15px;font-weight:700;color:#0a0a0a;margin-bottom:4px}
+.upload-zone p{font-size:12.5px;color:#6b7270}
+.hint{margin-top:6px;font-size:11px;color:#9aaba6}
+.btn-upload{display:inline-block;margin-top:14px;padding:9px 22px;background:#0F6E56;color:#fff;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:inherit}
+.btn-upload:hover{background:#085041}
+.progress{height:5px;background:#dce8e3;border-radius:3px;overflow:hidden;margin-top:12px;display:none}
+.progress-bar{height:100%;background:#1D9E75;transition:width .25s}
+#uploadStatus{font-size:12px;color:#0F6E56;margin-top:6px;min-height:18px}
+.sec-title{font-size:11.5px;font-weight:700;color:#6b7270;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.85rem;display:flex;align-items:center;gap:8px}
+.badge{background:#e1f5ee;color:#085041;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.files-list{display:flex;flex-direction:column;gap:8px}
+.file-card{background:#fff;border:1px solid #dce8e3;border-radius:12px;padding:.9rem 1rem;display:flex;align-items:center;gap:12px;transition:border-color .15s}
+.file-card:hover{border-color:#a8c9bf}
+.file-icon{width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:14px;font-weight:600;color:#0a0a0a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-meta{font-size:11.5px;color:#6b7270;margin-top:2px}
+.btn-dl{display:flex;align-items:center;gap:6px;padding:7px 15px;border-radius:8px;border:1px solid #c5d4cf;background:transparent;font-size:12.5px;font-weight:600;font-family:inherit;color:#0a0a0a;cursor:pointer;text-decoration:none;transition:background .12s;flex-shrink:0}
+.btn-dl:hover{background:#f0faf6;border-color:#1D9E75;color:#0F6E56}
+.btn-dl svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.btn-del{padding:7px 11px;border-radius:8px;border:1px solid #dce8e3;background:transparent;font-size:12px;cursor:pointer;color:#9aaba6;transition:all .12s;flex-shrink:0;font-family:inherit}
+.btn-del:hover{border-color:#E24B4A;color:#E24B4A;background:#FCEBEB}
+.empty{text-align:center;padding:3.5rem 1rem;color:#9aaba6;font-size:14px;background:#fff;border:1px dashed #dce8e3;border-radius:12px}
+.empty svg{width:42px;height:42px;stroke:#c5d4cf;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin:0 auto 12px;display:block}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#085041;color:#fff;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;animation:fadeup .3s ease;white-space:nowrap}
+.toast-err{background:#A32D2D}
+@keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@media(max-width:500px){.btn-dl span{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    </div>
+    <div>
+      <h1>Portal de Recursos Docentes</h1>
+      <p>Comparte archivos con tus compañeros · almacenamiento permanente</p>
+    </div>
+  </div>
+
+  <div class="teacher-bar">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    <input id="teacherName" type="text" placeholder="Tu nombre (para identificar tus archivos)" maxlength="50"/>
+  </div>
+
+  <div class="upload-zone" id="dropZone">
+    <label for="fileInput">
+      <div class="up-icon">
+        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+      </div>
+      <h3>Arrastra tu archivo aquí</h3>
+      <p>O haz clic para seleccionar desde tu dispositivo</p>
+      <p class="hint">PDF, imágenes, Word, Excel, video… cualquier tipo · hasta 50 MB</p>
+      <button class="btn-upload" type="button" onclick="document.getElementById('fileInput').click()">Seleccionar archivo</button>
+      <p id="uploadStatus"></p>
+    </label>
+    <input type="file" id="fileInput" accept="*/*"/>
+    <div class="progress" id="progressWrap">
+      <div class="progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <p class="sec-title">Archivos compartidos <span class="badge" id="countBadge">...</span></p>
+  <div class="files-list" id="filesList">
+    <div class="empty">
+      <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Conectando con Firebase…
+    </div>
+  </div>
+</div>
+
+<script>
+function fmtSize(b){
+  if(b<1024) return b+"B";
+  if(b<1048576) return (b/1024).toFixed(1)+"KB";
+  return (b/1048576).toFixed(1)+"MB";
+}
+function fmtDate(ts){
+  if(!ts) return "";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+}
+function fileEmoji(type){
+  type = type||"";
+  if(type.startsWith("image/"))                        return {e:"🖼",bg:"#FAEEDA"};
+  if(type==="application/pdf")                         return {e:"📕",bg:"#FAECE7"};
+  if(type.includes("word")||type.includes("document")) return {e:"📝",bg:"#E6F1FB"};
+  if(type.includes("sheet")||type.includes("excel")||type.includes("csv")) return {e:"📊",bg:"#EAF3DE"};
+  if(type.includes("presentation")||type.includes("powerpoint")) return {e:"📋",bg:"#FBEAF0"};
+  if(type.startsWith("video/"))                        return {e:"🎬",bg:"#F1EFE8"};
+  if(type.startsWith("audio/"))                        return {e:"🎵",bg:"#EEEDFE"};
+  if(type.includes("zip")||type.includes("rar"))       return {e:"📦",bg:"#D3D1C7"};
+  return {e:"📄",bg:"#E1F5EE"};
+}
+function toast(msg, ok){
+  if(ok===undefined) ok=true;
+  var t=document.createElement("div");
+  t.className="toast"+(ok?"":" toast-err");
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove();},3000);
+}
+
+function upload(file){
+  var MAX=50*1024*1024;
+  if(file.size>MAX){toast("El archivo supera 50 MB",false);return;}
+  var teacher=document.getElementById("teacherName").value.trim()||"Docente";
+  var prog=document.getElementById("progressWrap");
+  var bar=document.getElementById("progressBar");
+  var status=document.getElementById("uploadStatus");
+  prog.style.display="block";
+  bar.style.width="2%";
+  status.textContent="Subiendo…";
+  var storageRef=storage.ref("docentes/"+Date.now()+"_"+file.name);
+  var task=storageRef.put(file);
+  task.on("state_changed",
+    function(snap){
+      var pct=(snap.bytesTransferred/snap.totalBytes*100).toFixed(0);
+      bar.style.width=pct+"%";
+      status.textContent="Subiendo… "+pct+"%";
+    },
+    function(err){
+      prog.style.display="none";
+      status.textContent="";
+      toast("Error: "+err.message,false);
+    },
+    function(){
+      task.snapshot.ref.getDownloadURL().then(function(url){
+        db.collection(COL).add({
+          name:file.name, type:file.type, size:file.size,
+          teacher:teacher, url:url,
+          storagePath:storageRef.fullPath,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        }).then(function(){
+          prog.style.display="none";
+          bar.style.width="0%";
+          status.textContent="";
+          document.getElementById("fileInput").value="";
+          toast('✓ "'+file.name+'" compartido con todos');
+        });
+      });
+    }
+  );
+}
+
+window.deleteFile=function(docId, storagePath){
+  if(!confirm("¿Eliminar este archivo para todos?")) return;
+  db.collection(COL).doc(docId).delete().then(function(){
+    if(storagePath) storage.ref(storagePath).delete().catch(function(){});
+    toast("Archivo eliminado");
+  }).catch(function(e){toast("Error: "+e.message,false);});
+};
+
+db.collection(COL).orderBy("createdAt","desc").onSnapshot(function(snap){
+  var list=document.getElementById("filesList");
+  var badge=document.getElementById("countBadge");
+  badge.textContent=snap.docs.length;
+  if(snap.docs.length===0){
+    list.innerHTML='<div class="empty"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Aún no hay archivos. ¡Sé el primero en compartir!</div>';
+    return;
+  }
+  list.innerHTML=snap.docs.map(function(d){
+    var f=d.data();
+    var ei=fileEmoji(f.type);
+    return '<div class="file-card">'+
+      '<div class="file-icon" style="background:'+ei.bg+'">'+ei.e+'</div>'+
+      '<div class="file-info">'+
+        '<div class="file-name" title="'+f.name+'">'+f.name+'</div>'+
+        '<div class="file-meta">'+fmtSize(f.size)+' · '+(f.teacher||"Docente")+' · '+fmtDate(f.createdAt)+'</div>'+
+      '</div>'+
+      '<a class="btn-dl" href="'+f.url+'" target="_blank">'+
+        '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
+        '<span>Descargar</span></a>'+
+      '<button class="btn-del" onclick="deleteFile(\''+d.id+'\',\''+( f.storagePath||'')+'\')">✕</button>'+
+    '</div>';
+  }).join("");
+}, function(err){
+  document.getElementById("filesList").innerHTML=
+    '<div class="empty" style="color:#A32D2D"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Error de conexión: '+err.message+'</div>';
+});
+
+document.getElementById("fileInput").addEventListener("change",function(e){
+  if(e.target.files[0]) upload(e.target.files[0]);
+});
+var dz=document.getElementById("dropZone");
+dz.addEventListener("dragover",function(e){e.preventDefault();dz.classList.add("dragover");});
+dz.addEventListener("dragleave",function(){dz.classList.remove("dragover");});
+dz.addEventListener("drop",function(e){
+  e.preventDefault();dz.classList.remove("dragover");
+  if(e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]);
+});
+</script>
+</body>
+</html>
